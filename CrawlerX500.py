@@ -102,7 +102,15 @@ class X500Crawler(object):
 		finally:
 			req = None
 
-		return html_content
+		html_content_verified = html_content.replace('&nbsp;','')
+		html_content_verified = html_content_verified.replace('&deg','')
+		html_content_verified = html_content_verified.replace('&Auml','')
+		html_content_verified = html_content_verified.replace(r'Pós Venda','')
+		html_content_verified = html_content_verified.replace(r'&eacute;','')
+		html_content_verified = html_content_verified.replace(r'Á','')
+		html_content_verified = html_content_verified.replace(r'Í','')
+
+		return html_content_verified
 
 	def save_html_content_to_disk(self, html_content, targetfile):
 		'''
@@ -126,7 +134,20 @@ class X500Crawler(object):
 		#print soup.title
 		
 		#Name
-		Name =  soup.findAll(attrs={"class":"person_title"})[0].string
+		flag = False
+		retry_times = 0
+		Name = None
+		while not flag:
+			retry_times+=1
+			print "[%d] Try to Extract Name! @@@" % retry_times
+			try:
+				Name =  soup.findAll(attrs={"class":"person_title"})[0].string
+			except Exception, e:
+				print e
+			else:
+				flag = True
+
+		#Name =  soup.findAll(attrs={"class":"person_title"})[0].string
 		current_upi_info["Name"]   = str(Name)
 		print "Name:", Name
 
@@ -268,7 +289,8 @@ class X500Crawler(object):
 			#Save Face Picture to Disk
 			face_pic_url      = "http://faces.all.alcatel-lucent.com/l/" + current_upi
 			face_pic_on_disk  = os.path.join(self.facepath, current_upi+'.jpg')
-			open( face_pic_on_disk,"wb" ).write( urllib.urlopen(face_pic_url).read() )
+			if not os.path.exists(face_pic_on_disk):
+				open( face_pic_on_disk,"wb" ).write( urllib.urlopen(face_pic_url).read() )
 			
 			#Parse HTML
 			current_upi_info = self.parse_html_content(current_upi_html_content, current_upi)
@@ -329,6 +351,7 @@ class X500Crawler(object):
 			for item in self.collect.find({"CSL":current_upi_info["CSL"]}):
 				print item
 		else:
+			return True
 			print "[MongDB Update Operation]  %s ... ... \n" % current_upi_info["CSL"]
 			rec_finded_id = rec_finded["_id"]
 			self.collect.update( {"_id":rec_finded_id}, current_upi_info )
