@@ -1,4 +1,5 @@
-CrawlerX500
+Crawler & Spider
 ===========
-2014.11.12
-Crawler For X500
+1. Crawler For X500 / Python
+2. RubyGems.org     / Perl&cURL
+
